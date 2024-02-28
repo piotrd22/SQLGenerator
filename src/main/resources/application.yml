@@ -1,0 +1,21 @@
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-3.5-turbo
+          max-tokens: 150
+          temperature: 0
+#  web:
+#    resources:
+#      static-locations: classpath:/templates/
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  data-sources:
+    db1:
+      url: jdbc:postgresql://localhost:5432/marketplace
+      username: postgres
+      password: password
+      driver-class-name: org.postgresql.Driver
+      type: postgresql
