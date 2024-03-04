@@ -1,4 +1,4 @@
-package com.example.sqlgenerator.services;
+package com.example.sqlgenerator.services.ai;
 
 import org.springframework.ai.chat.ChatResponse;
 

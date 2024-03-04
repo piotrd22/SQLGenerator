@@ -1,40 +1,191 @@
 <!doctype html>
 <html lang="en">
   <head>
-      <title>Chat with OpenAI</title>
-      <meta content="text/html; charset=utf-8" />
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-      <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
-      <link rel="stylesheet" href="main.css" />
-      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-      <script src="index.js" defer></script>
+    <title>Chat with OpenAI</title>
+    <meta content="text/html; charset=utf-8" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"
+      defer
+    ></script>
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        font-size: 24px;
+        color: black;
+      }
+      .chatbox {
+        height: 500px;
+        width: 100%;
+        margin: auto;
+        overflow: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+      }
+      img {
+        display: block;
+        margin: auto;
+      }
+      .sidebar {
+        height: 100%;
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: #f8f9fa;
+        padding-top: 20px;
+      }
+      .content {
+        margin-left: 250px;
+        padding: 20px;
+      }
+    </style>
   </head>
   <body>
-  <div class="sidebar">
+    <div class="sidebar">
       <header class="centered-content">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/OpenAI_Logo_%282%29.svg" alt="OpenAI Logo" width="200" />
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/c/c9/OpenAI_Logo_%282%29.svg"
+          alt="OpenAI Logo"
+          width="200"
+        />
       </header>
-      <ul class="nav flex-column">
-          <li class="nav-item">
-              <a class="nav-link active" href="#">Home</a>
-          </li>
-      </ul>
-  </div>
-  <div class="content">
+      <label for="database-select" style="margin-top: 15px">Database:</label>
+      <select id="database-select" class="form-select">
+        <option selected>Select database</option>
+      </select>
+      <label
+        for="schema-select"
+        style="display: none; margin-top: 10px"
+        id="schema-select-label"
+        >Schema:</label
+      >
+      <select
+        id="schema-select"
+        class="form-select"
+        style="display: none"
+      ></select>
+    </div>
+    <div class="content">
       <div class="chatbox" id="chatbox"></div>
       <div class="input-container">
-          <form id="query-form" class="row g-3">
-              <div class="input-group mb-3">
-                  <label for="database-select" class="visually-hidden">Database:</label>
-                  <select id="database-select" class="form-select">
-                      <option value="db1">Database 1</option>
-                  </select>
-                  <label for="query-input" class="visually-hidden">Query:</label>
-                  <textarea id="query-input" class="form-control" placeholder="Type your query here..." rows="3"></textarea>
-                  <button class="btn btn-primary" type="submit" id="button-addon2">Send Query</button>
-              </div>
-          </form>
+        <form id="query-form" class="row g-3">
+          <div class="input-group mb-3">
+            <label for="query-input" class="visually-hidden">Query:</label>
+            <textarea
+              id="query-input"
+              class="form-control"
+              placeholder="Type your query here..."
+              rows="3"
+            ></textarea>
+            <button class="btn btn-primary" type="submit" id="button-addon2">
+              Send Query
+            </button>
+          </div>
+        </form>
       </div>
-  </div>
+    </div>
   </body>
+  <script>
+    fetch("/api/db")
+      .then((response) => response.json())
+      .then((data) => {
+        const selectElement = document.getElementById("database-select");
+        data.forEach((database) => {
+          const option = document.createElement("option");
+          option.value = database;
+          option.textContent = database;
+          selectElement.appendChild(option);
+        });
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+
+    document
+      .getElementById("database-select")
+      .addEventListener("change", () => {
+        let selectedDb = document.getElementById("database-select").value;
+        if (selectedDb !== "Select database") {
+          fetch(`/api/db/schemas/${selectedDb}`)
+            .then((response) => response.json())
+            .then((data) => {
+              const schemaSelectElement =
+                document.getElementById("schema-select");
+              const schemaLabel = document.getElementById(
+                "schema-select-label",
+              );
+              schemaSelectElement.innerHTML = "";
+
+              if (data.length === 0) {
+                schemaLabel.style.display = "none";
+                schemaSelectElement.style.display = "none";
+                return;
+              }
+
+              schemaLabel.style.display = "block";
+              schemaSelectElement.innerHTML =
+                "<option selected>Select schema</option>";
+              schemaSelectElement.style.display = "block";
+              data.forEach((schema) => {
+                const option = document.createElement("option");
+                option.value = schema;
+                option.textContent = schema;
+                schemaSelectElement.appendChild(option);
+              });
+            })
+            .catch((error) => console.error("Error fetching schemas:", error));
+        } else {
+          document.getElementById("schema-select").style.display = "none";
+        }
+      });
+
+    const chatbox = document.getElementById("chatbox");
+
+    document
+      .getElementById("query-form")
+      .addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const selectedDb = document.getElementById("database-select").value;
+        const userQuery = document.getElementById("query-input").value;
+        const selectedSchema =
+          document.getElementById("schema-select").value || "a";
+
+        document.getElementById("query-input").value = "";
+
+        let userDiv = document.createElement("div");
+        userDiv.className = "message user";
+        userDiv.innerHTML = "<strong>You:</strong> " + userQuery;
+        chatbox.appendChild(userDiv);
+
+        fetch("/api/ai", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            dbName: selectedDb,
+            nlQuery: userQuery,
+            schema: selectedSchema,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const botMessage = data.sql;
+            let botDiv = document.createElement("div");
+            botDiv.className = "message bot";
+            botDiv.innerHTML =
+              "<strong>OpenAI tutor:</strong> " + marked.parse(botMessage);
+            chatbox.appendChild(botDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+          })
+          .catch((error) => console.error("Error fetching sql query:", error));
+      });
+  </script>
 </html>

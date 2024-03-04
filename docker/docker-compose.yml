@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    container_name: postgresopenai
+    build: ./postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgresopenai
+    volumes:
+      - postgres:/data/postgresopenai
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  oracle:
+    container_name: oracleopenai
+    build: ./oracle
+    environment:
+      ORACLE_PWD: my_password
+    volumes:
+      - oracle:/opt/oracle/oradata
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    restart: unless-stopped
+
+  mysql:
+    container_name: mysqlopenai
+    build: ./mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+
+volumes:
+  postgres:
+  oracle:
+  mysql:

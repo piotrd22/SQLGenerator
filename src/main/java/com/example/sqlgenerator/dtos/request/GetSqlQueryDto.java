@@ -18,7 +18,7 @@ public class GetSqlQueryDto {
     @Size(max = 50)
     private String dbName;
 
-    @NotBlank
+    // Schema is not required because, for example, in MySQL they are not supported
     @Size(max = 50)
     private String schema;
 }
